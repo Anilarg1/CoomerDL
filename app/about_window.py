@@ -22,7 +22,7 @@ class GitHubDataWorker(QObject):
         super().__init__()
 
     def run(self):
-        url = "https://api.github.com/repos/Emy69/CoomerDL"
+        url = "https://api.github.com/repos/Anilarg1/CoomerDL"
         try:
             response = requests.get(url, timeout=15)
             response.raise_for_status()
@@ -169,7 +169,7 @@ class AboutWindow(QDialog):
         details = [
             (
                 "resources/img/iconos/about/user-account-solid-24.png",
-                f"{self.translate('DEVELOPER_LABEL')}: Emy69",
+                f"{self.translate('DEVELOPER_LABEL')}: SimpCity Scraper contributors",
                 "developer",
             ),
             (
@@ -223,14 +223,14 @@ class AboutWindow(QDialog):
         )
         self.stars_button.setCursor(Qt.PointingHandCursor)
         self.stars_button.clicked.connect(
-            lambda: self._open_url("https://github.com/Emy69/CoomerDL")
+            lambda: self._open_url("https://github.com/Anilarg1/CoomerDL")
         )
         card_layout.addWidget(self.stars_button)
 
         self.patron_button = QPushButton(self.translate("SUPPORT_ON_PATREON"))
         self.patron_button.setCursor(Qt.PointingHandCursor)
         self.patron_button.clicked.connect(
-            lambda: self._open_url("https://www.patreon.com/Emy69")
+            lambda: self._open_url("https://github.com/Anilarg1/CoomerDL")
         )
         card_layout.addWidget(self.patron_button)
 

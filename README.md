@@ -1,5 +1,5 @@
 ![Windows Compatibility](https://img.shields.io/badge/Windows-10%2C%2011-blue)
-![Downloads](https://img.shields.io/github/downloads/emy69/CoomerDL/total)
+![Downloads](https://img.shields.io/github/downloads/Anilarg1/CoomerDL/total)
 
 # SimpCity Scraper
 
@@ -74,7 +74,7 @@ https://github.com/user-attachments/assets/f11a4681-4c6f-4797-a8a5-8eabe5e2cdfa
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Emy69/CoomerDL.git
+git clone https://github.com/Anilarg1/CoomerDL.git
 cd CoomerDL
 ```
 
@@ -216,7 +216,7 @@ cd CoomerDL
 ### 3. Add the original repository as upstream
 
 ```bash
-git remote add upstream https://github.com/Emy69/CoomerDL.git
+git remote add upstream https://github.com/Anilarg1/CoomerDL.git
 ```
 
 ### 4. Keep your fork updated
@@ -252,7 +252,7 @@ These cookies are only intended for SimpCity support inside the app.
 
 ## Download database
 
-CoomerDL stores downloaded file records in a local SQLite database so it can:
+SimpCity Scraper stores downloaded file records in a local SQLite database so it can:
 
 - avoid re-downloading known files
 - export database records
@@ -287,24 +287,6 @@ resources/config/logs/
 
 ---
 
-## CLI projects
-
-If you prefer command-line tools, check these related projects:
-
-- **[Coomer CLI](https://github.com/Emy69/Coomer-cli)**
-- **[SimpCity CLI](https://github.com/Emy69/SimpCityCLI)**
-
----
-
-## Support
-
-If this project helps you, you can support it here:
-
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00.svg?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/emy_69)
-[![Support on Patreon](https://img.shields.io/badge/Support%20on%20Patreon-FF424D.svg?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/emy69)
-
----
-
 ## Community
 
 Join the Discord server:
@@ -317,4 +299,4 @@ Join the Discord server:
 
 You can find the latest public builds on the GitHub Releases page:
 
-- [Releases](https://github.com/Emy69/CoomerDL/releases)
+- [Releases](https://github.com/Anilarg1/CoomerDL/releases)
