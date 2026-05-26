@@ -110,7 +110,7 @@ class DownloaderFactory:
     def create_jpg5_downloader(self, url, progress_manager=None):
         return Jpg5Downloader(
             url=url,
-            carpeta_destino=self.frontend.get_download_folder(),
+            destination_folder=self.frontend.get_download_folder(),
             log_callback=self.frontend.log,
             tr=self.frontend.get_tr(),
             progress_manager=progress_manager,

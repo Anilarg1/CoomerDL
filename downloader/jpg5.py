@@ -8,7 +8,7 @@ class Jpg5Downloader(BaseApiDownloader):
     def __init__(
         self,
         url,
-        carpeta_destino,
+        destination_folder,
         progress_manager,
         log_callback=None,
         tr=None,
@@ -19,7 +19,7 @@ class Jpg5Downloader(BaseApiDownloader):
         external_downloader_path=None,
     ):
         super().__init__(
-            download_folder=carpeta_destino,
+            download_folder=destination_folder,
             max_workers=max_workers,
             log_callback=log_callback,
             update_progress_callback=update_progress_callback,
@@ -41,7 +41,7 @@ class Jpg5Downloader(BaseApiDownloader):
         )
         self.domain_name = "jpg5"
 
-    def descargar_imagenes(self):
+    def download_jpg5_images(self):
         resolved = self.adapter.resolve_url(self.url)
         jobs = self.create_download_jobs(resolved.get("folder_name", ""), resolved["media"])
 

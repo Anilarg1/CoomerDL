@@ -42,7 +42,11 @@ def test_erome_creates_download_jobs(tmp_path):
 
 
 def test_jpg5_creates_download_jobs(tmp_path):
-    downloader = Jpg5Downloader(url="https://jpg5.su/album/example", carpeta_destino=str(tmp_path), progress_manager=None)
+    downloader = Jpg5Downloader(
+        url="https://jpg5.su/album/example",
+        destination_folder=str(tmp_path),
+        progress_manager=None,
+    )
 
     jobs = downloader.create_download_jobs("", media_entries())
 

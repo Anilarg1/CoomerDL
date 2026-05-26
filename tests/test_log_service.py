@@ -24,9 +24,9 @@ class LogServiceTests(unittest.TestCase):
 
             content = Path(path).read_text(encoding="utf-8")
 
-        self.assertIn("Total de archivos descargados: 2", content)
-        self.assertIn("Archivos fallidos:\nfailed.jpg", content)
-        self.assertIn("Archivos saltados:\nskipped.jpg", content)
+        self.assertIn("Total downloaded files: 2", content)
+        self.assertIn("Failed files:\nfailed.jpg", content)
+        self.assertIn("Skipped files:\nskipped.jpg", content)
 
 
 if __name__ == "__main__":

@@ -102,19 +102,19 @@ class LogService:
         failed_files_summary = "\n".join(failed_files)
 
         summary = (
-            f"Total de archivos descargados: {total_files}\n"
-            f"Total de imágenes descargadas: {total_images}\n"
-            f"Total de videos descargados: {total_videos}\n"
-            f"Errores: {errors}\n"
-            f"Advertencias: {warnings}\n"
-            f"Tiempo total de descarga: {duration}\n\n"
-            f"Archivos saltados:\n{skipped_files_summary}\n\n"
-            f"Archivos fallidos:\n{failed_files_summary}\n\n"
+            f"Total downloaded files: {total_files}\n"
+            f"Total downloaded images: {total_images}\n"
+            f"Total downloaded videos: {total_videos}\n"
+            f"Errors: {errors}\n"
+            f"Warnings: {warnings}\n"
+            f"Total download time: {duration}\n\n"
+            f"Skipped files:\n{skipped_files_summary}\n\n"
+            f"Failed files:\n{failed_files_summary}\n\n"
         )
 
         with open(log_file_path, "w", encoding="utf-8") as file:
             file.write(summary)
-            file.write("\n--- LOGS COMPLETOS ---\n")
+            file.write("\n--- COMPLETE LOGS ---\n")
             file.write("\n".join(self.all_logs))
 
         return str(log_file_path)

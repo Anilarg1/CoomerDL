@@ -20,8 +20,7 @@ The app now uses a **PySide6 / Qt** interface. The old Tkinter / CustomTkinter U
 - SQLite download database
 - Configurable naming modes
 - Configurable folder structure
-- English and Spanish included by default
-- Community/fork-friendly translation system
+- English-only interface
 
 ### Supported file types
 
@@ -131,71 +130,10 @@ python -m pytest tests/filehosts
 
 The Settings window currently includes:
 
-- **General**: language selection
+- **General**: English-only application info
 - **Downloads**: max downloads, retries, retry interval, naming mode, folder structure
 - **Cookies**: SimpCity cookies import/save/clear
 - **Database**: browse, export, and manage download records
-
----
-
-## Language support
-
-Officially maintained in this repository:
-
-- English
-- Español
-
-Other languages can be added by the community through forks.
-
-### Translation file structure
-
-Translations are loaded from locale JSON files. The project uses stable translation keys instead of using full text strings as keys.
-
-Example structure:
-
-```text
-resources/config/i18n/
-    languages.json
-    en.json
-    es.json
-```
-
-### How to add a new language in a fork
-
-1. Fork the repository
-2. Create a new translation file by copying `en.json`
-3. Rename it to your language code, for example:
-   - `fr.json`
-   - `ja.json`
-   - `pt_br.json`
-4. Translate the values, but keep the keys unchanged
-5. Register the language inside `languages.json`
-6. Run the app and test the new language from **Settings > General**
-
-Example `languages.json`:
-
-```json
-{
-  "official": [
-    { "code": "en", "name": "English" },
-    { "code": "es", "name": "Español" }
-  ],
-  "community": [
-    { "code": "fr", "name": "Français" }
-  ]
-}
-```
-
-### Translation rules
-
-- Do not change translation keys
-- Only translate the values
-- Keep placeholders unchanged, for example:
-  - `{url}`
-  - `{error}`
-  - `{path}`
-  - `{version}`
-- If a key is missing in a community language, the app should fall back to English
 
 ---
 

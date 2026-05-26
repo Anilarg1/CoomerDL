@@ -40,8 +40,3 @@ class SettingsService:
     def save_download_folder(self, folder):
         self.set("download_folder", folder)
 
-    def load_language_preference(self, default_language="en"):
-        return self.get("language", default_language)
-
-    def save_language_preference(self, language):
-        self.set("language", language)

@@ -37,11 +37,11 @@ class BunkrDownloader(BaseApiDownloader):
                 return text
         return text
 
-    def descargar_post_bunkr(self, url_post):
+    def download_bunkr_post(self, post_url):
         try:
-            self.log("BUNKR_STARTING_POST_DOWNLOAD", url=url_post)
+            self.log("BUNKR_STARTING_POST_DOWNLOAD", url=post_url)
 
-            resolved = self.adapter.resolve_url(url_post)
+            resolved = self.adapter.resolve_url(post_url)
             folder_name = resolved["folder_name"]
             media_entries = resolved["media"]
 
@@ -65,15 +65,15 @@ class BunkrDownloader(BaseApiDownloader):
                 future.result()
 
         except Exception as e:
-            self.log("BUNKR_ERROR_PROCESSING_POST", url=url_post, error=e)
+            self.log("BUNKR_ERROR_PROCESSING_POST", url=post_url, error=e)
         finally:
             self.shutdown_executor()
 
-    def descargar_perfil_bunkr(self, url_perfil):
+    def download_bunkr_profile(self, profile_url):
         try:
-            self.log("BUNKR_STARTING_PROFILE_DOWNLOAD", url=url_perfil)
+            self.log("BUNKR_STARTING_PROFILE_DOWNLOAD", url=profile_url)
 
-            resolved = self.adapter.resolve_url(url_perfil)
+            resolved = self.adapter.resolve_url(profile_url)
             folder_name = resolved["folder_name"]
             media_entries = resolved["media"]
 
@@ -97,7 +97,7 @@ class BunkrDownloader(BaseApiDownloader):
                 future.result()
 
         except Exception as e:
-            self.log("BUNKR_ERROR_PROCESSING_PROFILE", url=url_perfil, error=e)
+            self.log("BUNKR_ERROR_PROCESSING_PROFILE", url=profile_url, error=e)
         finally:
             self.shutdown_executor()
 

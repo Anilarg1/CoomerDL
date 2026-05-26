@@ -29,9 +29,7 @@ class SettingsDialog(QDialog):
         self,
         parent,
         tr,
-        load_translations,
         update_ui_texts,
-        save_language_preference,
         version,
         downloader,
         on_settings_changed=None,
@@ -40,17 +38,13 @@ class SettingsDialog(QDialog):
 
         self.parent_window = parent
         self.translate = tr
-        self.load_translations = load_translations
         self.update_ui_texts = update_ui_texts
-        self.save_language_preference = save_language_preference
         self.version = version
         self.downloader = downloader
         self.on_settings_changed = on_settings_changed
 
         self.CONFIG_PATH = "resources/config/settings.json"
         self.COOKIES_PATH = "resources/config/cookies/simpcity.json"
-
-        self.languages = self._load_languages_map()
 
         self.settings_service = SettingsWindowService(
             config_path=self.CONFIG_PATH,
@@ -77,29 +71,6 @@ class SettingsDialog(QDialog):
                 except Exception:
                     return text
             return text
-
-    def _load_languages_map(self):
-        available = []
-        if (
-            self.parent_window is not None
-            and hasattr(self.parent_window, "translation_service")
-            and self.parent_window.translation_service is not None
-        ):
-            available = self.parent_window.translation_service.get_available_languages()
-
-        languages = {
-            item["name"]: item["code"]
-            for item in available
-            if isinstance(item, dict) and "name" in item and "code" in item
-        }
-
-        if not languages:
-            languages = {
-                "English": "en",
-                "Español": "es",
-            }
-
-        return languages
 
     def _build_ui(self):
         root = QVBoxLayout(self)
@@ -129,21 +100,9 @@ class SettingsDialog(QDialog):
     def _build_general_tab(self):
         layout = QFormLayout(self.general_tab)
 
-        self.language_combo = QComboBox()
-        self.language_combo.addItems(list(self.languages.keys()))
-        self.language_combo.setCurrentText(
-            self.settings_service.get_language_name(
-                self.languages,
-                self.settings.get("language", "en")
-            )
-        )
-
-        self.language_label = QLabel(self.translate("SETTINGS_LANGUAGE"))
-        layout.addRow(self.language_label, self.language_combo)
-
-        self.apply_language_button = QPushButton(self.translate("SETTINGS_APPLY_LANGUAGE"))
-        self.apply_language_button.clicked.connect(self._apply_language)
-        layout.addRow("", self.apply_language_button)
+        self.general_info_label = QLabel(self.translate("SETTINGS_GENERAL_INFO"))
+        self.general_info_label.setWordWrap(True)
+        layout.addRow("", self.general_info_label)
 
     def _build_downloads_tab(self):
         layout = QFormLayout(self.downloads_tab)
@@ -274,18 +233,6 @@ class SettingsDialog(QDialog):
         layout.addLayout(buttons_row)
 
         self.load_db_records()
-
-    def _reload_language_combo(self):
-        current_language_code = self.settings.get("language", "en")
-        self.languages = self._load_languages_map()
-
-        self.language_combo.blockSignals(True)
-        self.language_combo.clear()
-        self.language_combo.addItems(list(self.languages.keys()))
-        self.language_combo.setCurrentText(
-            self.settings_service.get_language_name(self.languages, current_language_code)
-        )
-        self.language_combo.blockSignals(False)
 
     def _reload_file_naming_combo(self):
         current_mode_value = self.settings.get("file_naming_mode", 0)
@@ -592,22 +539,6 @@ class SettingsDialog(QDialog):
     # ------------------------------------------------------------
     # actions
     # ------------------------------------------------------------
-    def _apply_language(self):
-        success, message = self.settings_service.apply_language_settings(
-            settings=self.settings,
-            selected_language_name=self.language_combo.currentText(),
-            languages=self.languages,
-            save_language_preference_func=self.save_language_preference,
-            load_translations_func=self.load_translations,
-            update_ui_texts_func=self.update_ui_texts,
-        )
-
-        if success:
-            self._retranslate_ui()
-            QMessageBox.information(self, self.translate("SUCCESS"), self.translate(message))
-        else:
-            QMessageBox.warning(self, self.translate("WARNING"), self.translate(message))
-
     def _apply_download_settings(self):
         try:
             parsed_values = self.download_settings_service.parse_form_values(
@@ -738,7 +669,7 @@ class SettingsDialog(QDialog):
         self.tabs.setTabText(2, self.translate("SETTINGS_TAB_COOKIES"))
         self.tabs.setTabText(3, self.translate("SETTINGS_TAB_DATABASE"))
 
-        self.language_label.setText(self.translate("SETTINGS_LANGUAGE"))
+        self.general_info_label.setText(self.translate("SETTINGS_GENERAL_INFO"))
         self.max_downloads_label.setText(self.translate("SETTINGS_MAX_DOWNLOADS"))
         self.folder_structure_label.setText(self.translate("SETTINGS_FOLDER_STRUCTURE"))
         self.max_retries_label.setText(self.translate("SETTINGS_MAX_RETRIES"))
@@ -746,7 +677,6 @@ class SettingsDialog(QDialog):
         self.file_naming_label.setText(self.translate("SETTINGS_FILE_NAMING_MODE"))
         self.download_engine_label.setText(self.translate("SETTINGS_DOWNLOAD_ENGINE"))
 
-        self.apply_language_button.setText(self.translate("SETTINGS_APPLY_LANGUAGE"))
         self.apply_downloads_button.setText(self.translate("SETTINGS_APPLY_DOWNLOAD_SETTINGS"))
 
         self.cookies_info_label.setText(self.translate("SETTINGS_COOKIES_INFO"))
@@ -762,7 +692,6 @@ class SettingsDialog(QDialog):
         self.delete_users_button.setText(self.translate("SETTINGS_DELETE_SELECTED_USERS"))
         self.delete_all_db_button.setText(self.translate("SETTINGS_DELETE_ENTIRE_DATABASE"))
 
-        self._reload_language_combo()
         self._reload_file_naming_combo()
 
         self.db_tree.setHeaderLabels([

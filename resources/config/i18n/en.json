@@ -16,8 +16,6 @@
   "DOWNLOADS": "Downloads",
   "COOKIES": "Cookies",
   "DATABASE": "Database",
-  "LANGUAGE": "Language",
-  "APPLY_LANGUAGE": "Apply Language",
   "SETTINGS_APPLIED": "Settings applied.",
   "INVALID_URL": "Invalid URL",
   "ERROR": "Error",
@@ -39,8 +37,6 @@
   "DOWNLOADING_FROM_JPG5": "Downloading from Jpg5",
   "DOWNLOAD_INFO": "Download info: {download_info}",
   "NO_ACTIVE_DOWNLOAD_TO_CANCEL": "There is no active download in progress to cancel.",
-  "PLEASE_SELECT_LANGUAGE": "Please select a language.",
-  "LANGUAGE_APPLIED_SUCCESS": "The language was applied successfully.",
   "ABOUT_WINDOW_TITLE": "About",
   "ABOUT_THIS_APP": "About This App",
   "DEVELOPER_LABEL": "Developer",
@@ -150,8 +146,7 @@
   "SETTINGS_TAB_COOKIES": "Cookies",
   "SETTINGS_TAB_DATABASE": "Database",
 
-  "SETTINGS_LANGUAGE": "Language",
-  "SETTINGS_APPLY_LANGUAGE": "Apply Language",
+  "SETTINGS_GENERAL_INFO": "SimpCity Scraper is English-only.",
 
   "SETTINGS_MAX_DOWNLOADS": "Max Downloads",
   "SETTINGS_FOLDER_STRUCTURE": "Folder Structure",

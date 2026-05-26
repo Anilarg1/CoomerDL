@@ -1,5 +1,4 @@
 import datetime
-from email.mime import text
 import os
 import subprocess
 import sys
@@ -79,10 +78,10 @@ class PySideMainWindow(QMainWindow):
         self.setWindowTitle(f"{APP_NAME} [{VERSION}]")
         self.resize(1000, 700)
 
-        # estado y servicios
+        # State and services.
         self.app_state = AppState()
         self.settings_service = SettingsService()
-        self.app_state.language = self.settings_service.load_language_preference("en")
+        self.app_state.language = "en"
         self.app_state.download_folder = self.settings_service.load_download_folder("downloads")
         self.download_folder = self.app_state.download_folder
 
@@ -94,7 +93,7 @@ class PySideMainWindow(QMainWindow):
         self.downloader_factory = DownloaderFactory(self.frontend_bridge, app=self)
         self.main_controller = MainController(self)
         self.progress_controller = ProgressController(self)
-        # runtime
+        # Runtime.
         self.active_downloader = None
         self.download_start_time = None
         self.settings = self.settings_service.load_settings()
@@ -104,7 +103,7 @@ class PySideMainWindow(QMainWindow):
         self._active_progress = {}
         self._active_progress_lock = threading.Lock()
 
-        # señales thread-safe
+        # Thread-safe signals.
         self.signals = QtSignals()
         self.signals.log_message.connect(self._append_log)
         self.signals.set_download_enabled.connect(self._set_download_enabled)
@@ -196,9 +195,7 @@ class PySideMainWindow(QMainWindow):
         dialog = SettingsDialog(
             parent=self,
             tr=self.tr,
-            load_translations=self.load_translations,
             update_ui_texts=self.update_ui_texts,
-            save_language_preference=self.save_language_preference,
             version=self.version,
             downloader=getattr(self, "active_downloader", None),
             on_settings_changed=self.apply_runtime_settings,
@@ -226,22 +223,14 @@ class PySideMainWindow(QMainWindow):
         )
 
         if dialog.exec():
-            selected_language = dialog.selected_language()
-            self.save_language_preference(selected_language)
-            self.load_translations(selected_language)
             self.update_ui_texts()
 
         self.show()
             
     def load_translations(self, language=None):
-        target_language = language or self.app_state.language
+        target_language = "en"
         self.app_state.language = target_language
         self.translation_service.set_language(target_language)
-
-    def save_language_preference(self, language):
-        self.app_state.language = language
-        self.settings_service.save_language_preference(language)
-        self.translation_service.set_language(language)
 
     def update_ui_texts(self):
         self.download_panel.url_label.setText(self.tr("URL_LABEL"))
@@ -314,7 +303,7 @@ class PySideMainWindow(QMainWindow):
         self.download_panel.folder_label.mousePressEvent = lambda event: self.open_download_folder()
 
     # ------------------------------------------------------------------
-    # compatibilidad con backend actual
+    # Compatibility with the current backend.
     # ------------------------------------------------------------------
     def tr(self, key, **kwargs):
         return self.translation_service.tr(key, **kwargs)
@@ -368,9 +357,9 @@ class PySideMainWindow(QMainWindow):
                 download_videos_enabled=bool(self.download_videos_check.get()),
                 download_start_time=self.download_start_time,
             )
-            self.signals.log_message.emit(f"Logs exportados exitosamente a {log_file_path}")
+            self.signals.log_message.emit(f"Logs exported successfully to {log_file_path}")
         except Exception as e:
-            self.signals.log_message.emit(f"No se pudo exportar los logs: {e}")
+            self.signals.log_message.emit(f"Could not export logs: {e}")
 
     def update_progress(self, downloaded, total, file_id=None, file_path=None, speed=None, eta=None, status=None):
         if not hasattr(self, "_active_progress"):
@@ -445,7 +434,7 @@ class PySideMainWindow(QMainWindow):
                 for item in self._active_progress.values()
             )
 
-        # Suavizado de velocidad para evitar saltos bruscos en archivos pequeños
+        # Smooth speed changes to avoid sharp jumps on small files.
         if total_speed > 0:
             if self._smoothed_total_speed <= 0:
                 self._smoothed_total_speed = total_speed
@@ -518,11 +507,11 @@ class PySideMainWindow(QMainWindow):
         )
 
     def _create_default_downloader(self):
-        # opcional para compatibilidad con algunos settings runtime
+        # Optional hook for compatibility with runtime settings.
         pass
 
     # ------------------------------------------------------------------
-    # acciones
+    # Actions.
     # ------------------------------------------------------------------
     def start_download(self):
         self.main_controller.start_download()
@@ -531,7 +520,7 @@ class PySideMainWindow(QMainWindow):
         self.main_controller.cancel_download()
 
     def select_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, self.tr("Seleccionar Carpeta"), self.download_folder or "")
+        folder = QFileDialog.getExistingDirectory(self, self.tr("Select Folder"), self.download_folder or "")
         if folder:
             self.download_folder = folder
             self.app_state.download_folder = folder
@@ -540,7 +529,7 @@ class PySideMainWindow(QMainWindow):
 
     def update_folder_label(self):
         path = self.download_folder or ""
-        # texto clickeable visualmente simple
+        # Simple clickable display text.
         self.download_panel.folder_label.setText(path)
 
     def open_download_folder(self):
@@ -552,10 +541,10 @@ class PySideMainWindow(QMainWindow):
             else:
                 subprocess.Popen(["xdg-open", self.download_folder])
         else:
-            self.show_error(self.tr("Error"), self.tr("La carpeta no existe o no es válida."))
+            self.show_error(self.tr("Error"), self.tr("The folder does not exist or is not valid."))
 
     # ------------------------------------------------------------------
-    # slots UI
+    # UI slots.
     # ------------------------------------------------------------------
     def _append_log(self, message: str):
         self.log_panel.log_text.insertHtml(message)

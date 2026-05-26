@@ -93,14 +93,14 @@ class MainController:
                 self.app.add_log_message_safe(self.app.tr("POST_URL"))
                 download_thread = threading.Thread(
                     target=self.wrapped_download,
-                    args=(self.app.bunkr_downloader.descargar_post_bunkr, request.url),
+                    args=(self.app.bunkr_downloader.download_bunkr_post, request.url),
                     daemon=True
                 )
             else:
                 self.app.add_log_message_safe("bunkr", self.app.tr("PROFILE_URL"))
                 download_thread = threading.Thread(
                     target=self.wrapped_download,
-                    args=(self.app.bunkr_downloader.descargar_perfil_bunkr, request.url),
+                    args=(self.app.bunkr_downloader.download_bunkr_profile, request.url),
                     daemon=True
                 )
 
@@ -185,7 +185,7 @@ class MainController:
             self.app.setup_jpg5_downloader()
             download_thread = threading.Thread(
                 target=self.wrapped_download,
-                args=(self.app.active_downloader.descargar_imagenes,),
+                args=(self.app.active_downloader.download_jpg5_images,),
                 daemon=True
             )
 
