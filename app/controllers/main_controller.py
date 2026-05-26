@@ -1,6 +1,7 @@
 import threading
 
 from app.models.download_request import DownloadRequest
+from app.services.site_registry import build_default_site_registry
 
 
 class MainController:
@@ -17,6 +18,17 @@ class MainController:
             max_downloads=getattr(self.app, "max_downloads", 3),
             only_this_url=bool(self.app.only_this_url_check.get()),
         )
+
+    def parse_request_url(self, raw_url):
+        registry = getattr(self.app, "site_registry", None)
+        if registry is None:
+            registry = build_default_site_registry(self.app.url_service)
+            self.app.site_registry = registry
+
+        match = registry.match(raw_url)
+        if match is None:
+            return self.app.url_service.parse_download_url(raw_url)
+        return match.parsed
 
     def start_download(self):
         request = self.build_request_from_ui()
@@ -37,7 +49,7 @@ class MainController:
 
         self.app.prepare_download_ui()
 
-        parsed = self.app.url_service.parse_download_url(request.url)
+        parsed = self.parse_request_url(request.url)
         download_thread = None
 
         if parsed.site_type == "erome":
@@ -162,6 +174,8 @@ class MainController:
                     self.app.active_downloader.download_images_from_simpcity,
                     request.url,
                     not request.only_this_url,
+                    request.download_images,
+                    request.download_videos,
                 ),
                 daemon=True
             )
@@ -173,6 +187,16 @@ class MainController:
                 target=self.wrapped_download,
                 args=(self.app.active_downloader.descargar_imagenes,),
                 daemon=True
+            )
+
+        elif parsed.site_type in {"pixeldrain", "turbovid", "gofile", "filester"}:
+            self.app.add_log_message_safe(parsed.site_type, self.app.tr("FILE_HOST_PROCESSING_URL", url=request.url))
+            self.app.setup_file_host_downloader(parsed.site_type)
+            self.app.active_downloader = self.app.file_host_downloader
+            download_thread = threading.Thread(
+                target=self.wrapped_download,
+                args=(self.app.active_downloader.download_url, request.url),
+                daemon=True,
             )
 
         elif parsed.site_type == "coomerfans":
@@ -220,9 +244,9 @@ class MainController:
         try:
             download_method(*args)
         finally:
-            self.app.active_downloader = None
             self.app.enable_widgets()
             self.app.export_logs()
+            self.app.active_downloader = None
 
     def start_ck_profile_download(self, site, service, user, query, download_all, initial_offset, only_this_url=False):
         download_info = self.app.active_downloader.download_media(

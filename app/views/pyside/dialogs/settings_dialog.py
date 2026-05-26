@@ -182,6 +182,16 @@ class SettingsDialog(QDialog):
         self.file_naming_label = QLabel(self.translate("SETTINGS_FILE_NAMING_MODE"))
         layout.addRow(self.file_naming_label, self.file_naming_combo)
 
+        self.download_engine_combo = QComboBox()
+        self.download_engine_combo.addItems(self.download_settings_service.get_download_engine_options())
+        self.download_engine_combo.setCurrentText(
+            self.download_settings_service.get_download_engine_label_from_setting(
+                self.settings.get("download_engine", "internal")
+            )
+        )
+        self.download_engine_label = QLabel(self.translate("SETTINGS_DOWNLOAD_ENGINE"))
+        layout.addRow(self.download_engine_label, self.download_engine_combo)
+
         self.apply_downloads_button = QPushButton(self.translate("SETTINGS_APPLY_DOWNLOAD_SETTINGS"))
         self.apply_downloads_button.clicked.connect(self._apply_download_settings)
         layout.addRow("", self.apply_downloads_button)
@@ -207,6 +217,10 @@ class SettingsDialog(QDialog):
         self.import_cookies_button = QPushButton(self.translate("SETTINGS_IMPORT_COOKIES"))
         self.import_cookies_button.clicked.connect(self._import_cookies)
         buttons_row.addWidget(self.import_cookies_button)
+
+        self.import_browser_cookies_button = QPushButton(self.translate("SETTINGS_IMPORT_BROWSER_COOKIES"))
+        self.import_browser_cookies_button.clicked.connect(self._import_browser_cookies)
+        buttons_row.addWidget(self.import_browser_cookies_button)
 
         self.save_cookies_button = QPushButton(self.translate("SETTINGS_SAVE_COOKIES"))
         self.save_cookies_button.clicked.connect(self._save_cookies)
@@ -602,6 +616,7 @@ class SettingsDialog(QDialog):
                 max_retries_value=self.max_retries_combo.currentText(),
                 retry_interval_value=self.retry_interval_edit.text(),
                 file_naming_mode_label=self.file_naming_combo.currentText(),
+                download_engine_label=self.download_engine_combo.currentText(),
             )
 
             self.settings = self.download_settings_service.apply_to_settings(
@@ -675,6 +690,22 @@ class SettingsDialog(QDialog):
                 self._t("SETTINGS_ERROR_IMPORTING_COOKIES", error=e)
             )
 
+    def _import_browser_cookies(self):
+        try:
+            cookies = self.cookies_settings_service.import_simpcity_cookies_from_browser()
+            self._reload_cookies_text()
+            QMessageBox.information(
+                self,
+                self.translate("SUCCESS"),
+                self._t("SETTINGS_BROWSER_COOKIES_IMPORTED_SUCCESS", count=len(cookies))
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                self.translate("ERROR"),
+                self._t("SETTINGS_ERROR_IMPORTING_BROWSER_COOKIES", error=e)
+            )
+
     def _clear_cookies(self):
         confirm = QMessageBox.question(
             self,
@@ -713,6 +744,7 @@ class SettingsDialog(QDialog):
         self.max_retries_label.setText(self.translate("SETTINGS_MAX_RETRIES"))
         self.retry_interval_label.setText(self.translate("SETTINGS_RETRY_INTERVAL_SECONDS"))
         self.file_naming_label.setText(self.translate("SETTINGS_FILE_NAMING_MODE"))
+        self.download_engine_label.setText(self.translate("SETTINGS_DOWNLOAD_ENGINE"))
 
         self.apply_language_button.setText(self.translate("SETTINGS_APPLY_LANGUAGE"))
         self.apply_downloads_button.setText(self.translate("SETTINGS_APPLY_DOWNLOAD_SETTINGS"))
@@ -720,6 +752,7 @@ class SettingsDialog(QDialog):
         self.cookies_info_label.setText(self.translate("SETTINGS_COOKIES_INFO"))
         self.cookies_tutorial_label.setText(self.translate("SETTINGS_COOKIES_TUTORIAL"))
         self.import_cookies_button.setText(self.translate("SETTINGS_IMPORT_COOKIES"))
+        self.import_browser_cookies_button.setText(self.translate("SETTINGS_IMPORT_BROWSER_COOKIES"))
         self.save_cookies_button.setText(self.translate("SETTINGS_SAVE_COOKIES"))
         self.clear_cookies_button.setText(self.translate("SETTINGS_CLEAR_COOKIES"))
 

@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.controllers.main_controller import MainController
+from app.app_info import APP_NAME
 from app.models.app_state import AppState
 from app.services.settings_service import SettingsService
 from app.services.translation_service import TranslationService
@@ -75,7 +76,7 @@ class PySideMainWindow(QMainWindow):
         super().__init__()
 
         self.version = VERSION
-        self.setWindowTitle(f"Downloader [{VERSION}]")
+        self.setWindowTitle(f"{APP_NAME} [{VERSION}]")
         self.resize(1000, 700)
 
         # estado y servicios
@@ -273,7 +274,7 @@ class PySideMainWindow(QMainWindow):
         if hasattr(self, "download_panel") and self.download_panel is not None:
             self.download_panel.retranslate_ui()
 
-        self.setWindowTitle(f"Downloader [{self.version}]")
+        self.setWindowTitle(f"{APP_NAME} [{self.version}]")
         self.update_folder_label()
 
     def apply_runtime_settings(self, new_settings: dict):
@@ -507,6 +508,9 @@ class PySideMainWindow(QMainWindow):
             self.url_entry.get().strip(),
             progress_manager=None
         )
+
+    def setup_file_host_downloader(self, site_type):
+        self.file_host_downloader = self.downloader_factory.create_file_host_downloader(site_type)
 
     def setup_coomerfans_downloader(self, is_profile_download=False):
         self.coomerfans_downloader = self.downloader_factory.create_coomerfans_downloader(

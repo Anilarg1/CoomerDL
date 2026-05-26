@@ -1,4 +1,3 @@
-import os
 from concurrent.futures import as_completed
 
 from downloader.core.base_api_downloader import BaseApiDownloader
@@ -46,36 +45,16 @@ class BunkrDownloader(BaseApiDownloader):
             folder_name = resolved["folder_name"]
             media_entries = resolved["media"]
 
-            target_folder = os.path.join(self.download_folder, folder_name)
-            os.makedirs(target_folder, exist_ok=True)
-
-            self.total_files = len(media_entries)
+            jobs = self.create_download_jobs(folder_name, media_entries)
+            self.total_files = len(jobs)
             self.completed_files = 0
             futures = []
 
-            for entry in media_entries:
-                media_url = entry["media_url"]
+            for job in jobs:
                 if self.download_mode == "queue":
-                    self.process_media_element(
-                        media_url,
-                        user_id=None,
-                        post_id=entry["post_id"],
-                        post_name=entry["title"],
-                        post_time=entry["published"],
-                        download_id=media_url,
-                        target_folder=target_folder,
-                    )
+                    self.process_download_job(job)
                 else:
-                    future = self.executor.submit(
-                        self.process_media_element,
-                        media_url,
-                        user_id=None,
-                        post_id=entry["post_id"],
-                        post_name=entry["title"],
-                        post_time=entry["published"],
-                        download_id=media_url,
-                        target_folder=target_folder,
-                    )
+                    future = self.executor.submit(self.process_download_job, job)
                     futures.append(future)
 
             self.futures = futures
@@ -98,36 +77,16 @@ class BunkrDownloader(BaseApiDownloader):
             folder_name = resolved["folder_name"]
             media_entries = resolved["media"]
 
-            target_folder = os.path.join(self.download_folder, folder_name)
-            os.makedirs(target_folder, exist_ok=True)
-
-            self.total_files = len(media_entries)
+            jobs = self.create_download_jobs(folder_name, media_entries)
+            self.total_files = len(jobs)
             self.completed_files = 0
             futures = []
 
-            for entry in media_entries:
-                media_url = entry["media_url"]
+            for job in jobs:
                 if self.download_mode == "queue":
-                    self.process_media_element(
-                        media_url,
-                        user_id=None,
-                        post_id=entry["post_id"],
-                        post_name=entry["title"],
-                        post_time=entry["published"],
-                        download_id=media_url,
-                        target_folder=target_folder,
-                    )
+                    self.process_download_job(job)
                 else:
-                    future = self.executor.submit(
-                        self.process_media_element,
-                        media_url,
-                        user_id=None,
-                        post_id=entry["post_id"],
-                        post_name=entry["title"],
-                        post_time=entry["published"],
-                        download_id=media_url,
-                        target_folder=target_folder,
-                    )
+                    future = self.executor.submit(self.process_download_job, job)
                     futures.append(future)
 
             self.futures = futures

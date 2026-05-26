@@ -4,6 +4,11 @@ from downloader.bunkr import BunkrDownloader
 from downloader.coomerfans import CoomerfansDownloader
 from downloader.downloader import Downloader
 from downloader.erome import EromeDownloader
+from downloader.file_host import FileHostDownloader
+from downloader.adapters.filester_adapter import FilesterAdapter
+from downloader.adapters.gofile_adapter import GoFileAdapter
+from downloader.adapters.pixeldrain_adapter import PixelDrainAdapter
+from downloader.adapters.turbovid_adapter import TurboVidAdapter
 from downloader.jpg5 import Jpg5Downloader
 from downloader.simpcity import SimpCity
 
@@ -13,7 +18,14 @@ class DownloaderFactory:
         self.frontend = frontend_bridge
         self.app = app
 
+    def _frontend_bool(self, getter_name, default=True):
+        getter = getattr(self.frontend, getter_name, None)
+        if getter is None:
+            return default
+        return getter()
+
     def create_erome_downloader(self, is_profile_download=False):
+        settings = getattr(self.app, "settings", {}) if self.app is not None else {}
         return EromeDownloader(
             enable_widgets_callback=self.frontend.enable_widgets,
             headers={
@@ -23,24 +35,35 @@ class DownloaderFactory:
             log_callback=self.frontend.log,
             update_progress_callback=self.frontend.update_progress,
             update_global_progress_callback=self.frontend.update_global_progress,
-            download_images=self.frontend.get_download_images(),
-            download_videos=self.frontend.get_download_videos(),
+            download_images=self._frontend_bool("get_download_images"),
+            download_videos=self._frontend_bool("get_download_videos"),
             is_profile_download=is_profile_download,
             max_workers=self.frontend.get_max_downloads(),
+            download_engine=settings.get("download_engine", "internal"),
+            external_downloader_path=settings.get("external_downloader_path"),
             tr=self.frontend.get_tr()
         )
 
     def create_simpcity_downloader(self):
+        settings = getattr(self.app, "settings", {}) if self.app is not None else {}
         return SimpCity(
             download_folder=self.frontend.get_download_folder(),
             log_callback=self.frontend.log,
             enable_widgets_callback=self.frontend.enable_widgets,
             update_progress_callback=self.frontend.update_progress,
             update_global_progress_callback=self.frontend.update_global_progress,
+            max_workers=self.frontend.get_max_downloads(),
+            max_retries=int(settings.get("max_retries", 3) or 3),
+            retry_interval=float(settings.get("retry_interval", 2.0) or 2.0),
+            download_images=self._frontend_bool("get_download_images"),
+            download_videos=self._frontend_bool("get_download_videos"),
+            download_engine=settings.get("download_engine", "internal"),
+            external_downloader_path=settings.get("external_downloader_path"),
             tr=self.frontend.get_tr()
         )
 
     def create_bunkr_downloader(self):
+        settings = getattr(self.app, "settings", {}) if self.app is not None else {}
         return BunkrDownloader(
             download_folder=self.frontend.get_download_folder(),
             log_callback=self.frontend.log,
@@ -53,6 +76,8 @@ class DownloaderFactory:
             },
             max_workers=self.frontend.get_max_downloads(),
             tr=self.frontend.get_tr(),
+            download_engine=settings.get("download_engine", "internal"),
+            external_downloader_path=settings.get("external_downloader_path"),
         )
 
     def create_general_downloader(self, settings):
@@ -67,8 +92,8 @@ class DownloaderFactory:
                 "Referer": "https://coomer.st/",
                 "Accept": "text/css"
             },
-            download_images=self.frontend.get_download_images(),
-            download_videos=self.frontend.get_download_videos(),
+            download_images=self._frontend_bool("get_download_images"),
+            download_videos=self._frontend_bool("get_download_videos"),
             download_compressed=self.frontend.get_download_compressed(),
             tr=self.frontend.get_tr(),
             max_workers=self.frontend.get_max_downloads(),
@@ -76,6 +101,8 @@ class DownloaderFactory:
             max_retries=int(settings.get("max_retries", 3) or 3),
             retry_interval=float(settings.get("retry_interval", 2.0) or 2.0),
             rate_limit_interval=float(settings.get("rate_limit_interval", 0.0) or 0.0),
+            download_engine=settings.get("download_engine", "internal"),
+            external_downloader_path=settings.get("external_downloader_path"),
         )
         downloader.file_naming_mode = settings.get("file_naming_mode", 0)
         return downloader
@@ -87,10 +114,40 @@ class DownloaderFactory:
             log_callback=self.frontend.log,
             tr=self.frontend.get_tr(),
             progress_manager=progress_manager,
-            max_workers=self.frontend.get_max_downloads()
+            max_workers=self.frontend.get_max_downloads(),
+            download_engine=getattr(self.app, "settings", {}).get("download_engine", "internal") if self.app is not None else "internal",
+            external_downloader_path=getattr(self.app, "settings", {}).get("external_downloader_path") if self.app is not None else None,
+        )
+
+    def create_file_host_downloader(self, site_type):
+        settings = getattr(self.app, "settings", {}) if self.app is not None else {}
+        adapters = {
+            "pixeldrain": PixelDrainAdapter,
+            "turbovid": TurboVidAdapter,
+            "gofile": GoFileAdapter,
+            "filester": FilesterAdapter,
+        }
+        adapter = adapters[site_type](log_callback=self.frontend.log, tr=self.frontend.get_tr())
+        return FileHostDownloader(
+            adapter=adapter,
+            download_folder=self.frontend.get_download_folder(),
+            log_callback=self.frontend.log,
+            enable_widgets_callback=self.frontend.enable_widgets,
+            update_progress_callback=self.frontend.update_progress,
+            update_global_progress_callback=self.frontend.update_global_progress,
+            max_workers=self.frontend.get_max_downloads(),
+            max_retries=int(settings.get("max_retries", 3) or 3),
+            retry_interval=float(settings.get("retry_interval", 2.0) or 2.0),
+            download_images=self._frontend_bool("get_download_images"),
+            download_videos=self._frontend_bool("get_download_videos"),
+            download_compressed=self._frontend_bool("get_download_compressed"),
+            download_engine=settings.get("download_engine", "internal"),
+            external_downloader_path=settings.get("external_downloader_path"),
+            tr=self.frontend.get_tr(),
         )
 
     def create_coomerfans_downloader(self, is_profile_download=False):
+        settings = getattr(self.app, "settings", {}) if self.app is not None else {}
         return CoomerfansDownloader(
             download_folder=self.frontend.get_download_folder(),
             log_callback=self.frontend.log,
@@ -105,5 +162,7 @@ class DownloaderFactory:
             download_videos=self.frontend.get_download_videos(),
             is_profile_download=is_profile_download,
             max_workers=self.frontend.get_max_downloads(),
+            download_engine=settings.get("download_engine", "internal"),
+            external_downloader_path=settings.get("external_downloader_path"),
             tr=self.frontend.get_tr()
         )

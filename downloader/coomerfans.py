@@ -5,6 +5,7 @@ from concurrent.futures import as_completed
 
 from downloader.core.base_api_downloader import BaseApiDownloader
 from downloader.adapters.coomerfans_adapter import CoomerfansAdapter
+from downloader.models.download_job import DownloadJob
 
 
 class CoomerfansDownloader(BaseApiDownloader):
@@ -23,6 +24,8 @@ class CoomerfansDownloader(BaseApiDownloader):
         tr=None,
         max_workers=5,
         download_folder="downloads",
+        download_engine="internal",
+        external_downloader_path=None,
     ):
         super().__init__(
             download_folder=download_folder,
@@ -36,6 +39,8 @@ class CoomerfansDownloader(BaseApiDownloader):
             download_videos=download_videos,
             download_compressed=False,
             tr=tr,
+            download_engine=download_engine,
+            external_downloader_path=external_downloader_path,
         )
 
         self.language = language
@@ -73,41 +78,37 @@ class CoomerfansDownloader(BaseApiDownloader):
         if self.is_profile_download and self.enable_widgets_callback:
             self.enable_widgets_callback()
 
-    def _download_entries(self, media_entries, root_folder):
-        self.total_files = len(media_entries)
-        self.completed_files = 0
-        futures = []
-
+    def create_download_jobs(self, root_folder, media_entries):
+        jobs = []
         for entry in media_entries:
             media_url = entry["media_url"]
             folder_name = entry.get("folder_name") or "coomerfans_post"
-            target_folder = os.path.join(root_folder, folder_name) if not os.path.isabs(folder_name) else folder_name
+            target_folder = Path(folder_name) if os.path.isabs(folder_name) else Path(root_folder) / folder_name
+            jobs.append(
+                DownloadJob(
+                    media_url=media_url,
+                    target_folder=target_folder,
+                    filename=entry.get("filename") or os.path.basename(media_url.split("?", 1)[0]),
+                    domain="coomerfans",
+                    headers=self.headers,
+                    post_id=entry.get("post_id"),
+                    post_name=entry.get("title"),
+                    post_time=entry.get("published"),
+                )
+            )
+        return jobs
 
-            os.makedirs(target_folder, exist_ok=True)
+    def _download_entries(self, media_entries, root_folder):
+        jobs = self.create_download_jobs(root_folder, media_entries)
+        self.total_files = len(jobs)
+        self.completed_files = 0
+        futures = []
 
+        for job in jobs:
             if self.download_mode == "queue":
-                self.process_media_element(
-                    media_url,
-                    user_id=None,
-                    post_id=entry.get("post_id"),
-                    post_name=entry.get("title"),
-                    post_time=entry.get("published"),
-                    download_id=media_url,
-                    target_folder=target_folder,
-                    forced_filename=entry.get("filename"),
-                )
+                self.process_download_job(job)
             else:
-                future = self.executor.submit(
-                    self.process_media_element,
-                    media_url,
-                    user_id=None,
-                    post_id=entry.get("post_id"),
-                    post_name=entry.get("title"),
-                    post_time=entry.get("published"),
-                    download_id=media_url,
-                    target_folder=target_folder,
-                    forced_filename=entry.get("filename"),
-                )
+                future = self.executor.submit(self.process_download_job, job)
                 futures.append(future)
 
         self.futures = futures

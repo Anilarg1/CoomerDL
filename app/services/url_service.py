@@ -91,12 +91,30 @@ class UrlService:
                 is_profile=True,
             )
 
-        if "jpg5.su" in raw_url:
+        if re.search(r"https?://([^/]+\.)?(jpg[1-7]\.su|jpg7\.cr|selti-delivery\.ru|cuckcapital\.cr)", raw_url):
             return ParsedDownloadUrl(
                 original_url=raw_url,
                 parsed_url=parsed,
                 site_type="jpg5",
                 is_profile=True,
+            )
+
+        if re.search(r"https?://([^/]+\.)?(pixeldrain|pixeldra)\.(com|net|in|nl|biz|tech|dev)", raw_url):
+            return ParsedDownloadUrl(raw_url, parsed, "pixeldrain", is_post=True)
+
+        if re.search(r"https?://([^/]+\.)?(turbo|turbovid|saint2?|saint)\.(cr|to|su)", raw_url):
+            return ParsedDownloadUrl(raw_url, parsed, "turbovid", is_post=True)
+
+        if parsed.netloc == "gofile.io" or parsed.netloc.endswith(".gofile.io"):
+            return ParsedDownloadUrl(raw_url, parsed, "gofile", is_profile=parsed.path.startswith("/d/"))
+
+        if "filester." in parsed.netloc:
+            return ParsedDownloadUrl(
+                raw_url,
+                parsed,
+                "filester",
+                is_profile=parsed.path.startswith("/f/"),
+                is_post=parsed.path.startswith("/d/"),
             )
 
         if "coomerfans.com" in raw_url:

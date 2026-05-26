@@ -1,4 +1,6 @@
 import hashlib
+import base64
+import math
 import re
 from urllib.parse import urljoin, urlparse
 
@@ -84,6 +86,22 @@ class BunkrAdapter:
             }
 
         intermediate_url = first_anchor["href"]
+        if self._is_direct_download_url(intermediate_url):
+            filename = self._extract_file_page_filename(soup) or "bunkr_post"
+            media_url = self._resolve_direct_download_url(intermediate_url) or intermediate_url
+            return {
+                "folder_name": self.get_consistent_folder_name(url, "bunkr_post"),
+                "media": [
+                    {
+                        "media_url": media_url,
+                        "filename": filename,
+                        "title": "bunkr_post",
+                        "post_id": None,
+                        "published": "",
+                    }
+                ],
+            }
+
         soup2 = self._request_soup(intermediate_url)
 
         p_tag = soup2.find("p", class_="mt-3 text-center")
@@ -121,6 +139,48 @@ class BunkrAdapter:
                 }
             ],
         }
+
+    def _is_direct_download_url(self, url):
+        host = urlparse(url).netloc.lower()
+        path = urlparse(url).path
+        return "bunkr" in host and path.startswith("/file/")
+
+    def _extract_file_page_filename(self, soup):
+        title = soup.select_one("h1.truncate")
+        if title:
+            filename = self.clean_filename(title.get_text(strip=True))
+            if filename:
+                return filename
+        return None
+
+    def _resolve_direct_download_url(self, download_page_url):
+        file_id = urlparse(download_page_url).path.rstrip("/").split("/")[-1]
+        if not file_id:
+            return None
+
+        response = self.session.post(
+            "https://apidl.bunkr.ru/api/_001_v2",
+            json={"id": file_id},
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": self.headers.get("User-Agent", "Mozilla/5.0"),
+                "Referer": download_page_url,
+            },
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+        encrypted_url = payload.get("url")
+        timestamp = payload.get("timestamp")
+        if not encrypted_url or not timestamp:
+            return None
+
+        key = f"SECRET_KEY_{math.floor(int(timestamp) / 3600)}".encode("utf-8")
+        encrypted_bytes = base64.b64decode(encrypted_url)
+        return bytes(
+            value ^ key[index % len(key)]
+            for index, value in enumerate(encrypted_bytes)
+        ).decode("utf-8")
 
     def _resolve_post_or_profile(self, url):
         soup = self._request_soup(url)
@@ -161,6 +221,10 @@ class BunkrAdapter:
             image_page_url = urljoin(profile_url, href)
 
             try:
+                if urlparse(image_page_url).path.startswith("/f/"):
+                    media.extend(self._resolve_f_url(image_page_url).get("media", []))
+                    continue
+
                 image_soup = self._request_soup(image_page_url)
 
                 media_tag = image_soup.select_one(

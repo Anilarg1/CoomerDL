@@ -1,5 +1,7 @@
 import requests
 
+from app.app_info import APP_NAME
+
 from PySide6.QtCore import Qt, QObject, QThread, Signal, QUrl
 from PySide6.QtGui import QPixmap, QDesktopServices
 from PySide6.QtWidgets import (
@@ -159,7 +161,7 @@ class AboutWindow(QDialog):
         card_layout.setContentsMargins(16, 16, 16, 16)
         card_layout.setSpacing(10)
 
-        self.title_label = QLabel(self.translate("ABOUT_THIS_APP"))
+        self.title_label = QLabel(APP_NAME)
         self.title_label.setProperty("role", "title")
         self.title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         card_layout.addWidget(self.title_label)

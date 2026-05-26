@@ -16,6 +16,12 @@ Scripts/
 
 # Test caches
 .pytest_cache/
+tmp_*/
+*_downloads/
+approved_test_url_downloads/
+simpcity_page48_downloads/
+simpcity_page48_turbo_verified/
+simpcity_page48_video_only_check/
 
 # IDE/editor configuration files
 .idea/
@@ -43,4 +49,6 @@ app/user_panel.py
 resources/config/download_path/download_folder.json
 CLI/
 resources/config/downloads.db
+resources/config/downloads_*.db
 resources/config/cookies/*
+tools/

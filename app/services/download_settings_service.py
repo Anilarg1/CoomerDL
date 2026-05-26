@@ -13,8 +13,21 @@ class DownloadSettingsService:
         3: "Post Date/Time + Post Name",
     }
 
+    DOWNLOAD_ENGINE_LABEL_TO_VALUE = {
+        "Internal": "internal",
+        "aria2c": "aria2",
+    }
+
+    DOWNLOAD_ENGINE_VALUE_TO_LABEL = {
+        "internal": "Internal",
+        "aria2": "aria2c",
+    }
+
     def get_naming_options(self):
         return list(self.NAMING_MODE_LABEL_TO_VALUE.keys())
+
+    def get_download_engine_options(self):
+        return list(self.DOWNLOAD_ENGINE_LABEL_TO_VALUE.keys())
 
     def get_naming_label_from_setting(self, value):
         if isinstance(value, int):
@@ -32,6 +45,9 @@ class DownloadSettingsService:
 
         return self.NAMING_MODE_VALUE_TO_LABEL[0]
 
+    def get_download_engine_label_from_setting(self, value):
+        return self.DOWNLOAD_ENGINE_VALUE_TO_LABEL.get(value, self.DOWNLOAD_ENGINE_VALUE_TO_LABEL["internal"])
+
     def parse_form_values(
         self,
         max_downloads_value,
@@ -39,11 +55,13 @@ class DownloadSettingsService:
         max_retries_value,
         retry_interval_value,
         file_naming_mode_label,
+        download_engine_label="Internal",
     ):
         max_downloads = int(max_downloads_value)
         max_retries = int(max_retries_value)
         retry_interval = float(retry_interval_value)
         numeric_mode = self.NAMING_MODE_LABEL_TO_VALUE.get(file_naming_mode_label, 0)
+        download_engine = self.DOWNLOAD_ENGINE_LABEL_TO_VALUE.get(download_engine_label, "internal")
 
         return {
             "max_downloads": max_downloads,
@@ -51,6 +69,7 @@ class DownloadSettingsService:
             "max_retries": max_retries,
             "retry_interval": retry_interval,
             "file_naming_mode": numeric_mode,
+            "download_engine": download_engine,
         }
 
     def apply_to_settings(self, settings: dict, parsed_values: dict):
@@ -59,6 +78,7 @@ class DownloadSettingsService:
         settings["max_retries"] = parsed_values["max_retries"]
         settings["retry_interval"] = parsed_values["retry_interval"]
         settings["file_naming_mode"] = parsed_values["file_naming_mode"]
+        settings["download_engine"] = parsed_values["download_engine"]
         return settings
 
     def apply_to_downloader(self, downloader, parsed_values: dict):
@@ -73,3 +93,4 @@ class DownloadSettingsService:
         downloader.max_retries = parsed_values["max_retries"]
         downloader.retry_interval = parsed_values["retry_interval"]
         downloader.file_naming_mode = parsed_values["file_naming_mode"]
+        downloader.download_engine = parsed_values["download_engine"]

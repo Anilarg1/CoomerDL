@@ -1,5 +1,6 @@
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from threading import Semaphore
 from urllib.parse import quote_plus, urlencode, urljoin, urlparse
 import os
@@ -9,6 +10,12 @@ import threading
 import time
 import sqlite3
 import random
+
+from downloader.engine.download_engine import DownloadEngine
+from downloader.engine.download_history import DownloadHistory
+from downloader.engine.aria2_engine import Aria2Engine
+from downloader.models.download_result import DownloadStatus
+from downloader.planners.coomer_kemono_planner import CoomerKemonoPlanner
 
 class Downloader:
     def __init__(
@@ -29,6 +36,8 @@ class Downloader:
         tr=None,
         folder_structure="default",
         rate_limit_interval=0.05,
+        download_engine="internal",
+        external_downloader_path=None,
     ):
         self.download_folder = download_folder
         self.log_callback = log_callback
@@ -52,6 +61,8 @@ class Downloader:
         self.domain_last_request = defaultdict(float)
         self.rate_limit_interval = rate_limit_interval
         self.download_mode = "multi"
+        self.download_engine = download_engine or "internal"
+        self.external_downloader_path = external_downloader_path or "aria2c"
 
         self.video_extensions = (".mp4", ".mkv", ".webm", ".mov", ".avi", ".flv", ".wmv", ".m4v")
         self.image_extensions = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff")
@@ -641,6 +652,59 @@ class Downloader:
 
         return collected
 
+    def plan_coomer_kemono_jobs(self, site, user_id, service, posts):
+        planner = CoomerKemonoPlanner(
+            download_folder=Path(self.download_folder),
+            site=site,
+            service=service,
+            user_id=user_id,
+            headers=self.headers,
+            folder_structure=self.folder_structure,
+            download_images=self.download_images,
+            download_videos=self.download_videos,
+            download_compressed=self.download_compressed,
+            filename_resolver=self.get_filename,
+            folder_resolver=self.get_media_folder,
+        )
+        return planner.create_jobs(posts)
+
+    def create_download_engine(self):
+        if self.download_engine == "aria2":
+            return Aria2Engine(
+                history=DownloadHistory(self.db_path),
+                executable=self.external_downloader_path,
+                max_retries=self.max_retries,
+                retry_interval=self.retry_interval,
+            )
+
+        return DownloadEngine(
+            session=self.session,
+            history=DownloadHistory(self.db_path),
+            cancel_event=self.cancel_requested,
+            max_retries=self.max_retries,
+            retry_interval=self.retry_interval,
+            request_timeout=self.request_timeout,
+            progress_callback=self.update_progress_callback,
+            log_callback=self.log_callback,
+        )
+
+    def process_download_job(self, job):
+        engine = self.create_download_engine()
+        result = engine.download(job)
+        if result.status == DownloadStatus.COMPLETED:
+            with self.file_lock:
+                self.completed_files += 1
+            if self.update_global_progress_callback:
+                self.update_global_progress_callback(self.completed_files, self.total_files)
+            self.download_cache[job.database_key] = (str(job.final_path), result.file_size)
+        elif result.status == DownloadStatus.SKIPPED:
+            with self.file_lock:
+                self.skipped_files.append(str(job.final_path))
+        elif result.status == DownloadStatus.FAILED:
+            with self.file_lock:
+                self.failed_files.append(job.media_url)
+        return result
+
     def process_media_element(
         self,
         media_url,
@@ -874,31 +938,16 @@ class Downloader:
             if not download_all:
                 posts = posts[:50]
 
-            media_entries = self._collect_filtered_media(posts, site)
-            self.total_files = len(media_entries)
+            jobs = self.plan_coomer_kemono_jobs(site, user_id, service, posts)
+            self.total_files = len(jobs)
             self.completed_files = 0
 
             futures = []
-            for entry in media_entries:
+            for job in jobs:
                 if self.download_mode == "queue":
-                    self.process_media_element(
-                        entry["media_url"],
-                        user_id,
-                        post_id=entry["post_id"],
-                        post_name=entry["title"],
-                        post_time=entry["published"],
-                        download_id=entry["media_url"],
-                    )
+                    self.process_download_job(job)
                 else:
-                    future = self.executor.submit(
-                        self.process_media_element,
-                        entry["media_url"],
-                        user_id,
-                        entry["post_id"],
-                        entry["title"],
-                        entry["published"],
-                        entry["media_url"],
-                    )
+                    future = self.executor.submit(self.process_download_job, job)
                     futures.append(future)
 
             self.futures = futures
@@ -922,45 +971,16 @@ class Downloader:
                 self.log("CK_NO_POST_FOUND_FOR_ID")
                 return
 
-            current_post = posts[0]
-            media_urls = self.process_post(current_post, site)
-
-            current_post_id = current_post.get("id") or post_id or "unknown_id"
-            title = current_post.get("title") or ""
-            published_time = current_post.get("published") or ""
-
-            deduped_media_urls = []
-            seen = set()
-            for media_url in media_urls:
-                if media_url in seen:
-                    continue
-                seen.add(media_url)
-                deduped_media_urls.append(media_url)
-
-            self.total_files = len(deduped_media_urls)
+            jobs = self.plan_coomer_kemono_jobs(site, user_id, service, posts)
+            self.total_files = len(jobs)
             self.completed_files = 0
             futures = []
 
-            for media_url in deduped_media_urls:
+            for job in jobs:
                 if self.download_mode == "queue":
-                    self.process_media_element(
-                        media_url,
-                        user_id,
-                        post_id=current_post_id,
-                        post_name=title,
-                        post_time=published_time,
-                        download_id=media_url,
-                    )
+                    self.process_download_job(job)
                 else:
-                    future = self.executor.submit(
-                        self.process_media_element,
-                        media_url,
-                        user_id,
-                        current_post_id,
-                        title,
-                        published_time,
-                        media_url,
-                    )
+                    future = self.executor.submit(self.process_download_job, job)
                     futures.append(future)
 
             self.futures = futures

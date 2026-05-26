@@ -1,9 +1,9 @@
 ![Windows Compatibility](https://img.shields.io/badge/Windows-10%2C%2011-blue)
 ![Downloads](https://img.shields.io/github/downloads/emy69/CoomerDL/total)
 
-# CoomerDL
+# SimpCity Scraper
 
-**CoomerDL** is a Python desktop downloader for supported media pages such as Coomer, Kemono, Erome, Bunkr, SimpCity, and JPG5.
+**SimpCity Scraper** is a Python desktop downloader focused on SimpCity threads and supported embedded file hosts such as Bunkr, PixelDrain, TurboVid, GoFile, Filester, and JPG6/JPG5.
 
 The app now uses a **PySide6 / Qt** interface. The old Tkinter / CustomTkinter UI is no longer the active desktop UI.
 
@@ -47,6 +47,11 @@ The app now uses a **PySide6 / Qt** interface. The old Tkinter / CustomTkinter U
 - [bunkr-albums.io](https://bunkr-albums.io/)
 - [simpcity.su](https://simpcity.su/)
 - [jpg5.su](https://jpg5.su/)
+- [jpg6.su](https://jpg6.su/)
+- [pixeldrain.com](https://pixeldrain.com/)
+- [turbo.cr / turbovid.cr](https://turbo.cr/)
+- [gofile.io](https://gofile.io/)
+- Filester domains such as `filester.si` and `filester.gg`
 
 ---
 
@@ -107,6 +112,18 @@ python main.py
 
 - Python 3.10+
 - Windows 10 or Windows 11
+
+---
+
+## Architecture
+
+Downloader internals are documented in [docs/architecture.md](docs/architecture.md).
+
+File-host support can be tested with:
+
+```bash
+python -m pytest tests/filehosts
+```
 
 ---
 

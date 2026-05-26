@@ -5,7 +5,9 @@
     "max_retries": 4,
     "retry_interval": 2.0,
     "file_naming_mode": 3,
+    "download_engine": "aria2",
+    "external_downloader_path": "tools/aria2/aria2-1.37.0-win-64bit-build1/aria2c.exe",
     "theme": "Dark",
     "startup_show_community_message": false,
-    "download_folder": "C:/Users/Jordan/Downloads/petitesaki/fansly"
+    "download_folder": "C:/Users/shaai/Downloads/ABDM/Videos"
 }

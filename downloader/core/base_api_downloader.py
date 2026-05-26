@@ -1,5 +1,6 @@
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from threading import Semaphore
 from urllib.parse import urlparse
 import os
@@ -8,6 +9,13 @@ import requests
 import threading
 import time
 import sqlite3
+
+from downloader.engine.download_engine import DownloadEngine
+from downloader.engine.download_filters import media_type_for_url, should_download_media
+from downloader.engine.download_history import DownloadHistory
+from downloader.engine.aria2_engine import Aria2Engine
+from downloader.models.download_job import DownloadJob
+from downloader.models.download_result import DownloadStatus
 
 
 class BaseApiDownloader:
@@ -29,6 +37,8 @@ class BaseApiDownloader:
         tr=None,
         folder_structure="default",
         rate_limit_interval=1.0,
+        download_engine="internal",
+        external_downloader_path=None,
     ):
         self.download_folder = download_folder
         self.log_callback = log_callback
@@ -50,6 +60,8 @@ class BaseApiDownloader:
         self.domain_last_request = defaultdict(float)
         self.rate_limit_interval = rate_limit_interval
         self.download_mode = "multi"
+        self.download_engine = download_engine or "internal"
+        self.external_downloader_path = external_downloader_path or "aria2c"
 
         self.video_extensions = (".mp4", ".mkv", ".webm", ".mov", ".avi", ".flv", ".wmv", ".m4v")
         self.image_extensions = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff")
@@ -322,6 +334,84 @@ class BaseApiDownloader:
                         )
 
         return None
+
+    def create_download_engine(self):
+        if self.download_engine == "aria2":
+            return Aria2Engine(
+                history=DownloadHistory(self.db_path),
+                executable=self.external_downloader_path,
+                max_retries=self.max_retries,
+                retry_interval=self.retry_interval,
+            )
+
+        return DownloadEngine(
+            session=self.session,
+            history=DownloadHistory(self.db_path),
+            cancel_event=self.cancel_requested,
+            max_retries=self.max_retries,
+            retry_interval=self.retry_interval,
+            request_timeout=self.request_timeout,
+            progress_callback=self.update_progress_callback,
+            log_callback=self.log_callback,
+        )
+
+    def create_download_jobs(self, folder_name, media_entries, domain=None):
+        target_folder = Path(self.download_folder) / folder_name
+        jobs = []
+        seen_filenames = set()
+
+        def unique_filename(filename):
+            base, extension = os.path.splitext(filename)
+            candidate = filename
+            suffix = 2
+
+            while candidate.lower() in seen_filenames:
+                candidate = f"{base}_{suffix}{extension}"
+                suffix += 1
+
+            seen_filenames.add(candidate.lower())
+            return candidate
+
+        for entry in media_entries:
+            media_url = entry["media_url"]
+            filename = entry.get("filename") or os.path.basename(media_url.split("?", 1)[0])
+            filter_target = filename if media_type_for_url(media_url) == "other" else media_url
+            if not should_download_media(
+                filter_target,
+                download_images=self.download_images,
+                download_videos=self.download_videos,
+                download_compressed=self.download_compressed,
+            ):
+                continue
+            jobs.append(
+                DownloadJob(
+                    media_url=media_url,
+                    target_folder=target_folder,
+                    filename=unique_filename(filename),
+                    domain=domain or getattr(self, "domain_name", "system"),
+                    headers=self.headers,
+                    post_id=entry.get("post_id"),
+                    post_name=entry.get("title"),
+                    post_time=entry.get("published"),
+                )
+            )
+        return jobs
+
+    def process_download_job(self, job):
+        engine = self.create_download_engine()
+        result = engine.download(job)
+        if result.status == DownloadStatus.COMPLETED:
+            with self.file_lock:
+                self.completed_files += 1
+            if self.update_global_progress_callback:
+                self.update_global_progress_callback(self.completed_files, self.total_files)
+        elif result.status == DownloadStatus.SKIPPED:
+            with self.file_lock:
+                self.skipped_files.append(str(job.final_path))
+        elif result.status == DownloadStatus.FAILED:
+            with self.file_lock:
+                self.failed_files.append(job.media_url)
+        return result
 
     def _find_valid_subdomain(self, url, max_subdomains=10):
         parsed = urlparse(url)

@@ -4,3 +4,4 @@ requests
 pillow
 psutil
 cloudscraper
+browser-cookie3
